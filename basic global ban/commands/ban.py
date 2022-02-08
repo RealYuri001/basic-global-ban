@@ -1,6 +1,7 @@
 import nextcord
 from nextcord.ext import commands
 import sqlite3
+import datetime
 
 class ConfirmReport(nextcord.ui.View):
   def __init__(self):
@@ -61,9 +62,20 @@ class GlobalBan(commands.Cog):
         data = self.c.fetchall()
         for ban in data:
             embed = nextcord.Embed(title="IDs of members who got global ban executed.")
-            embed.add_field(name="ID list", value=f"<@{ban[0]}> {ban[0]}")
+            embed.add_field(name="ID list", value=f"<@{ban[0]}> {ban[0]}. Reason: {get_reason}")
             embed.set_footer(text="Basic global ban system made by Mr.Nab#0730")
             await ctx.send(embed=embed)
+    
+    async def get_reason(self, guild: nextcord.Guild, action: nextcord.AuditLogAction, target) -> str:
+        await asyncio.sleep(5)
+
+        before_sleep = datetime.datetime.utcnow() - datetime.timedelta(seconds=15)
+        async for entry in guild.audit_logs(limit=25, after=before_sleep, action=action):
+            if entry.target != target:
+                continue
+
+            return entry.reason if entry.reason is not None else 'no reason specified'
+        return 'no reason found'
 
 def setup(bot):
     bot.add_cog(GlobalBan(bot))
