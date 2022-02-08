@@ -16,4 +16,4 @@ for file in os.listdir('./commands'):
         bot.load_extension("commands."+ file[:-3])
 
 keep_alive()
-bot.run('ODg0MTA0MjMzMjc0NzI4NDg5.YTToOw.XLdZOKmf9FGXC1r9KhSSsQ2a62E')
+bot.run('TOKEN') #put the token here
