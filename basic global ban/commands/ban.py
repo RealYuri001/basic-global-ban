@@ -2,6 +2,7 @@ import nextcord
 from nextcord.ext import commands
 import sqlite3
 import datetime
+import asyncio
 
 class ConfirmReport(nextcord.ui.View):
   def __init__(self):
