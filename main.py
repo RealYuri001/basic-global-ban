@@ -1,7 +1,11 @@
+#!python3
+#-*- coding: utf-8 -*-
+
 import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
+from keep_alive import keep_alive
 
 load_dotenv()
 
@@ -12,9 +16,11 @@ bot = commands.Bot(commands.when_mentioned_or(","), intents=intents, help_comman
 @bot.event
 async def on_ready():
     await bot.change_presence(status=discord.Status.idle)
+    print("I am ready!")
 
 for file in os.listdir('./commands'):
     if file.endswith('.py'):
         bot.load_extension("commands."+ file[:-3])
 
-bot.run('token') #Put your own token here
+keep_alive()
+bot.run('ODg0MTA0MjMzMjc0NzI4NDg5.YTToOw.5j9607vA5sY2T9JyeoZdbd-hQpE') #Put your own token here
