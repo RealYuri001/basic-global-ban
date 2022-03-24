@@ -22,5 +22,6 @@ for file in os.listdir('./commands'):
     if file.endswith('.py'):
         bot.load_extension("commands."+ file[:-3])
 
-keep_alive()
-bot.run('token') #Put your own token here
+if __name__ == '__main__':
+    keep_alive()
+    bot.run('token') #Put your own token here
