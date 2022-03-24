@@ -9,10 +9,8 @@ to deal in the Software without restriction, including without limitation
 the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,7 +22,6 @@ DEALINGS IN THE SOFTWARE.
 
 from typing import Union
 import asyncio
-
 import discord
 from discord.ext import commands
 import aiosqlite
@@ -62,10 +59,20 @@ class SimpleGlobalBan(commands.Cog):
             
             await db.commit()
     
+    @staticmethod
+    async def gban_thingy(server, user, reason, succeded_in, errored_out_in):
+        try:
+            await server.ban(user, reason=reason)
+            succeded_in.append(server.name)
+        
+        except discord.errors.Forbidden:
+            errored_out_in[server.name] = "Permissions error!"
+        
+        except Exception as e:
+            errored_out_in[server.name] = e
+    
     @commands.command(aliases=['gb', 'gban', 'globalban'])
     @commands.is_owner()
-    @commands.bot_has_permissions(ban_members=True)
-    @commands.has_permissions(ban_members=True)
     @commands.cooldown(1, 300, commands.BucketType.guild)
     async def global_ban(self, ctx, user: Union[commands.UserConverter, commands.MemberConverter], *, reason: str =None):
 
@@ -84,21 +91,21 @@ class SimpleGlobalBan(commands.Cog):
             await ctx.send("Successfully executed the ban to {}".format(str(user)))
             await asyncio.sleep(2)
             
-            for server in self.bot.guilds:
-                if user in server:
-                    try:
-                        user = server.get_member(user.id)
-                        await server.ban(user, reason=f"Global ban executed by {str(ctx.author)}. Reason: {reason}")
-                    
-                    except discord.errors.Forbidden:
-                        return await ctx.send("I need a ban permission to ban that user or move me to higher than that users.")
-                    
-                    except discord.errors.NotFound:
-                        return await ctx.send("User you're provided is not found. Make sure to double-check before banning.")
-                else:
-                    user = server.fetch_user(user.id)
-                    await server.ban(user, reason=f"Global ban executed by {ctx.author}. Reason: {reason}")
-        
+            errored_out_in = {}
+            succeded_in = []
+            
+            reason = f"Global ban executed by {str(ctx.author)}. Reason: {reason}"
+            
+            tasks = (self.gban_thingy(server, user, reason, succeded_in, errored_out_in) for server in self.bot.guilds)
+            
+            await asyncio.gather(*tasks)
+            
+            succeded_in = ", ".join([f"`{server}`" for server in succeded_in])
+            errored_out_in = "\n".join([f"**{t[0]}**: `{t[1]}`" for t in errored_out_in.values()])
+            
+            await ctx.send(f"I have banned the user from:\n{succeded_in}") if succeded_in else ...
+            await ctx.send(f"I wasn't able to ban the user from these servers, the reasons are also given:\n{errored_out_in}") if errored_out_in else ...
+            
         else:
             return
     
