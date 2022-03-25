@@ -42,14 +42,14 @@ class Confirm(discord.ui.View):
     async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
         await interaction.response.send_message("Done. Successfully confirmed.")
         self.value = True
-        self.disabled = True
+        
         self.stop()
     
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, button: discord.ui.Button, interaction: discord.Interaction):
         await interaction.response.send_message("Cancelling due to user request.")
         self.value = False
-        self.disabled = True
+        
         self.stop()
     
 class SimpleGlobalBan(commands.Cog):
@@ -112,8 +112,6 @@ class SimpleGlobalBan(commands.Cog):
                         await db.commit()
 
                         await cursor.execute("SELECT * FROM banned_users")
-                        data = await cursor.fetchone()
-                        print(data)
                     
             errored_out_in = {}
             succeded_in = []
@@ -246,23 +244,25 @@ class SimpleGlobalBan(commands.Cog):
                         user = await self.bot.fetch_user(user.id)
                         await server.unban(user, reason=f"Automatic unbanned authorized by {ctx.author}. Reason: {reason}")
         
-                except discord.NotFound:
+                except discord.errors.NotFound:
                     await ctx.send("This user is not found.")
                     pass
         
-                except discord.Forbidden:
-                    return await ctx.send("I don't a permission to do that")    
+                except discord.errors.Forbidden:
+                    await ctx.send("I don't a permission to do that")
+                    pass
 
                 async with aiosqlite.connect("db/main.db") as db:
                     async with db.cursor() as cursor:
-                        await cursor.execute('SELECT user_id FROM banned_users')
+                        await cursor.execute('SELECT user_id FROM banned_users WHERE user_id = ?', (user.id,))
           
                         data = await cursor.fetchone()
 
                         if data:
-                            await cursor.execute('DELETE user_id FROM banned_users WHERE user_id = ?', (user.id))
-                            await db.commit()
+                            await cursor.execute('DELETE FROM banned_users WHERE user_id = ?', (user.id,))
                             await ctx.send('Sucessfully unbanned the user.')
+                        
+                    await db.commit()
           
         else:
             return
@@ -303,16 +303,14 @@ class View(discord.ui.View):
     @discord.ui.button(emoji="🔨")
     async def do_ban(self, button: discord.ui.Button, interaction: discord.Interaction):
         await interaction.response.send_message("Banning...")
-        
+
         self.value = True
-        self.stop()
 
         await interaction.followup.send("Done.")
   
     @discord.ui.button(emoji="❌")
     async def close(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.value = False
-        self.stop()
 
 def setup(bot):
     bot.add_cog(SimpleGlobalBan(bot))
