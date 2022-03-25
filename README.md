@@ -29,6 +29,9 @@ Features
 This is an example from my friend who tested it.
 
 
-Here's a proof of global banning:
+
+Ban the user when they joined:
 
 https://cdn.discordapp.com/attachments/829221672150237194/956817637046910976/Discord_3_-_-_Microsoft_Edge_2565-03-25_14-27-17_Trim.mp4
+
+![image](https://user-images.githubusercontent.com/77676149/160131024-242dda33-eefe-43d9-8887-466d08fa24b8.png)
