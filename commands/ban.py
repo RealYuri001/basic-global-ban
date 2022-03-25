@@ -284,43 +284,6 @@ class SimpleGlobalBan(commands.Cog):
             else:
                 if member.id in data:
                     await member.ban(reason="Automatic joining ban-sync executed.")
-    
-    #@commands.Cog.listener()
-    #async def on_member_unban(self, guild, user: discord.User):
-
-        #async with aiosqlite.connect("db/main.db") as db:
-           #async with db.cursor() as cursor:
-                #await cursor.execute('SELECT * FROM banned_users')
-        
-                #data = await cursor.fetchall()
-
-            #if user.id in data:
-                #try:
-                    #member = await self.bot.fetch_user(data[0])
-            
-                #except discord.errors.NotFound:
-                    #pass
-
-                #async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, limit=None):
-                    #if user not in await guild.bans():
-                        #try:
-                            #member = await self.bot.fetch_user(data[0])
-                            #await guild.ban(member, reason="Automatic unbanned ban-sync executed.")
-                
-                        #except discord.errors.NotFound:
-                            #pass
-
-                        #except discord.errors.Forbidden:
-                            #pass
-
-                        #except discord.HTTPException:
-                            #pass
-
-                    #await entry.user.send(f"Please do not unban {user}, since they're global banned with this reason: {data[1]}")
-                    #break
-            
-                #else:
-                    #return
                 
 class View(discord.ui.View):
     def __init__(self):
