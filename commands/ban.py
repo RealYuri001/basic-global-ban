@@ -110,6 +110,10 @@ class SimpleGlobalBan(commands.Cog):
                     else:
                         await cursor.execute("INSERT INTO banned_users VALUES (?, ?)", (user.id, reason if reason else "N/A"))
                         await db.commit()
+
+                        await cursor.execute("SELECT * FROM banned_users")
+                        data = await cursor.fetchone()
+                        print(data)
                     
             errored_out_in = {}
             succeded_in = []
@@ -193,7 +197,7 @@ class SimpleGlobalBan(commands.Cog):
                         try:
                             for user in data:
                                 await ctx.trigger_typing()
-                                user = self.bot.get_user(user[0])
+                                user = await self.bot.fetch_user(user[0])
 
                                 await ctx.guild.ban(user, reason=f"Mass malicious users list banned. Authorized by {str(ctx.author)}")
                                 await asyncio.sleep(0.25)
@@ -264,26 +268,31 @@ class SimpleGlobalBan(commands.Cog):
             return
     
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member):       
+        
         async with aiosqlite.connect("db/main.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute('SELECT * FROM banned_users')
-
+            
                 data = await cursor.fetchall()
-            
-            if member.id in data:
-                try:
-                    await member.ban(reason="Automatic joining ban-sync executed.")
+                banned_users = {}
+                
+                for x in data:
+                  banned_users[x[0]] = x[1]
         
-                except discord.errors.Forbidden:
-                    pass
+        if member.id in banned_users:
+            try:
+                reason = "Automatic joined ban-sync executed by an automatic system. Reason: {}".format(banned_users[member.id])
+                await member.ban(reason=reason)
             
-                except discord.errors.NotFound:
-                    pass
-            
-            else:
-                if member.id in data:
-                    await member.ban(reason="Automatic joining ban-sync executed.")
+            except discord.errors.Forbidden:
+                return
+
+            except discord.errors.NotFound:
+                return
+        
+        else:
+          return
                 
 class View(discord.ui.View):
     def __init__(self):
