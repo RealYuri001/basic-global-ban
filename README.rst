@@ -13,6 +13,8 @@ You can clone and use this repository by the following:
   
   pip install -r requirements.txt
 
+Make sure to 
+
 Features
 --------
 
