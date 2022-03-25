@@ -114,7 +114,7 @@ class SimpleGlobalBan(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         
-        async with aiosqlite.connect("globalban.db") as db:
+        async with aiosqlite.connect("db/main.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute('SELECT user_id FROM banned_users')
       
@@ -142,7 +142,7 @@ class SimpleGlobalBan(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def executedlist(self, ctx):
         
-        async with aiosqlite.connect("globalban.db") as db:
+        async with aiosqlite.connect("db/main.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute('SELECT * FROM banned_users')
 
@@ -241,7 +241,7 @@ class SimpleGlobalBan(commands.Cog):
                 except discord.Forbidden:
                     return await ctx.send("I don't a permission to do that")    
 
-                async with aiosqlite.connect("globalban.db") as db:
+                async with aiosqlite.connect("db/main.db") as db:
                     async with db.cursor() as cursor:
                         await cursor.execute('SELECT user_id FROM banned_users')
           
@@ -258,7 +258,7 @@ class SimpleGlobalBan(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
     
-        async with aiosqlite.connect("globalban.db") as db:
+        async with aiosqlite.connect("db/main.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute('SELECT user_id FROM banned_users')
       
