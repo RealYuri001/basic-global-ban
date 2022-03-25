@@ -10,7 +10,7 @@ load_dotenv()
 
 intents = discord.Intents.all()
 
-bot = commands.Bot(commands.when_mentioned_or(","), intents=intents, help_command=None, owner_ids=[]) #Put your own IDs here
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(" "), intents=intents, help_command=None, owner_ids=[]) #Put your own ID and prefix (inside commands.when_mentioned_or() here
 
 @bot.event
 async def on_ready():
