@@ -1,4 +1,5 @@
 """
+
 The MIT License (MIT)
 
 Copyright (c) 2022-present RealKiller666
@@ -9,7 +10,6 @@ to deal in the Software without restriction, including without limitation
 the rights to use, copy, modify, merge, publish, distribute, sublicense,
 and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
 
@@ -20,6 +20,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
 """
 
 from typing import Union
@@ -27,6 +28,8 @@ import asyncio
 import discord
 from discord.ext import commands
 import aiosqlite
+
+__version__ = '1.1.0'
 
 class Confirm(discord.ui.View):
     def __init__(self):
@@ -79,6 +82,7 @@ class SimpleGlobalBan(commands.Cog):
     async def global_ban(self, ctx, user: Union[commands.UserConverter, commands.MemberConverter], *, reason: str =None):
 
         if not user:
+            self.global_ban.reset_cooldown(ctx)
             raise commands.errors.BadArgument
         
         view = Confirm()
@@ -92,7 +96,21 @@ class SimpleGlobalBan(commands.Cog):
         elif view.value:
             await ctx.send("Successfully executed the ban to {}".format(str(user)))
             await asyncio.sleep(2)
-            
+
+            async with aiosqlite.connect("db/main.db") as db:
+                async with db.cursor() as cursor:
+                    await cursor.execute('SELECT * FROM banned_users')
+                    
+                    data = await cursor.fetchone()
+
+                    if user.id in data and data:
+                        self.global_ban.reset_cooldown(ctx)
+                        return await ctx.send("This user is already banned.")
+                    
+                    else:
+                        await cursor.execute("INSERT INTO banned_users VALUES (?, ?)", (user.id, reason if reason else "N/A"))
+                        await db.commit()
+                    
             errored_out_in = {}
             succeded_in = []
             
@@ -107,35 +125,41 @@ class SimpleGlobalBan(commands.Cog):
             
             await ctx.send(f"I have banned the user from:\n{succeded_in}") if succeded_in else ...
             await ctx.send(f"I wasn't able to ban the user from these servers, the reasons are also given:\n{errored_out_in}") if errored_out_in else ...
-            
+
         else:
             return
     
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        
+    
         async with aiosqlite.connect("db/main.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute('SELECT user_id FROM banned_users')
       
-            data = await cursor.fetchall()
+                data = await cursor.fetchall()
       
         if guild.members in data:
             try:
-                for members in data:
-                    await members.ban(members, reason="Automatic ban-sync executed.")
+                for member in guild.members:
+                    await member.ban(reason="Automatic ban-sync executed.")
         
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
           
                 for channel in guild.channels:
                     await channel.send("I can't ban these malicious users. Please move me higher than anyone else.")
                     break
-            
-            except discord.errors.NotFound:
-                pass
-
+      
         else:
-            return
+            for ban_userid in data:
+                try:
+                    member = await self.bot.fetch_user(ban_userid[0])
+                    await guild.ban(member, reason="Authorized auto ban sync.")
+                
+                except discord.Forbidden:
+                    pass
+
+                except discord.NotFound:
+                    pass
 
     @commands.command()
     @commands.bot_has_permissions(ban_members=True)
@@ -166,17 +190,13 @@ class SimpleGlobalBan(commands.Cog):
                     return
         
                 elif view.value:
-                    for server in self.bot.guilds:
-                        if ban_userid[0] in server.members:
-                            continue
-
                         try:
-                            member = server.get_member(ban_userid[0])
-                            
-                            await ctx.trigger_typing()
-                            await server.ban(member, reason=f"Mass malicious users list banned. Authorized by {str(ctx.author)}")
-                            
-                            await asyncio.sleep(0.25)
+                            for user in data:
+                                await ctx.trigger_typing()
+                                user = self.bot.get_user(user[0])
+
+                                await ctx.guild.ban(user, reason=f"Mass malicious users list banned. Authorized by {str(ctx.author)}")
+                                await asyncio.sleep(0.25)
 
                         except discord.NotFound:
                             await ctx.send("This user is not found.")
@@ -188,23 +208,6 @@ class SimpleGlobalBan(commands.Cog):
               
                         except Exception as e:
                             print(e)
-            
-                    else:
-                        await ctx.trigger_typing()
-                        member = await self.bot.get_or_fetch_user(ban_userid[0])
-                        try:
-                            if member in await server.bans():
-                                pass
-                        
-                            await server.ban(member, reason=f"Mass malicious users list banned. Authorized by {str(ctx.author)}")
-              
-                        except discord.NotFound:
-                            await ctx.send("This user is not found.")
-                            pass
-                    
-                        except discord.Forbidden:
-                            await ctx.send("I'm missing permissions to mass ban a user.")
-                            return
 
                 else:
                     await f.delete()
@@ -214,6 +217,11 @@ class SimpleGlobalBan(commands.Cog):
     @commands.cooldown(1, 300, commands.BucketType.guild)
     @commands.is_owner()
     async def global_unban(self, ctx, user: commands.UserConverter, reason: str=None):
+
+        if not user:
+            raise commands.BadArgument
+        
+        self.global_unban.reset_cooldown(ctx)
         
         view = Confirm()
         
@@ -254,39 +262,66 @@ class SimpleGlobalBan(commands.Cog):
           
         else:
             return
-        
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
     
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
         async with aiosqlite.connect("db/main.db") as db:
             async with db.cursor() as cursor:
-                await cursor.execute('SELECT user_id FROM banned_users')
-      
-                data = await cursor.fetchall()
-      
-        if guild.members in data:
-            try:
-                for member in guild.members:
-                    await member.ban(reason="Automatic ban-sync executed.")
-        
-            except discord.Forbidden:
-          
-                for channel in guild.channels:
-                    await channel.send("I can't ban these malicious users. Please move me higher than anyone else.")
-                    break
-      
-        else:
-            for ban_userid in data:
-                try:
-                    member = await self.bot.fetch_user(ban_userid[0])
-                    await guild.ban(member, reason="Authorized automatic ban sync.")
-                
-                except discord.Forbidden:
-                    pass
+                await cursor.execute('SELECT * FROM banned_users')
 
-                except discord.NotFound:
+                data = await cursor.fetchall()
+            
+            if member.id in data:
+                try:
+                    await member.ban(reason="Automatic joining ban-sync executed.")
+        
+                except discord.errors.Forbidden:
                     pass
+            
+                except discord.errors.NotFound:
+                    pass
+            
+            else:
+                if member.id in data:
+                    await member.ban(reason="Automatic joining ban-sync executed.")
     
+    #@commands.Cog.listener()
+    #async def on_member_unban(self, guild, user: discord.User):
+
+        #async with aiosqlite.connect("db/main.db") as db:
+           #async with db.cursor() as cursor:
+                #await cursor.execute('SELECT * FROM banned_users')
+        
+                #data = await cursor.fetchall()
+
+            #if user.id in data:
+                #try:
+                    #member = await self.bot.fetch_user(data[0])
+            
+                #except discord.errors.NotFound:
+                    #pass
+
+                #async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, limit=None):
+                    #if user not in await guild.bans():
+                        #try:
+                            #member = await self.bot.fetch_user(data[0])
+                            #await guild.ban(member, reason="Automatic unbanned ban-sync executed.")
+                
+                        #except discord.errors.NotFound:
+                            #pass
+
+                        #except discord.errors.Forbidden:
+                            #pass
+
+                        #except discord.HTTPException:
+                            #pass
+
+                    #await entry.user.send(f"Please do not unban {user}, since they're global banned with this reason: {data[1]}")
+                    #break
+            
+                #else:
+                    #return
+                
 class View(discord.ui.View):
     def __init__(self):
         super().__init__()
@@ -299,6 +334,8 @@ class View(discord.ui.View):
         
         self.value = True
         self.stop()
+
+        await interaction.followup.send("Done.")
   
     @discord.ui.button(emoji="❌")
     async def close(self, button: discord.ui.Button, interaction: discord.Interaction):
