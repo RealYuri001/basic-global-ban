@@ -249,7 +249,7 @@ class SimpleGlobalBan(commands.Cog):
                     pass
         
                 except discord.errors.Forbidden:
-                    await ctx.send("I don't a permission to do that")
+                    await ctx.send("I don't have a permission to do that.")
                     pass
 
                 async with aiosqlite.connect("db/main.db") as db:
