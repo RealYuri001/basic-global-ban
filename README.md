@@ -37,3 +37,6 @@ Ban the user when they joined:
 https://user-images.githubusercontent.com/77676149/160317462-8ae723d8-0351-43e6-8fd2-37199e542a6d.mp4
 
 https://user-images.githubusercontent.com/77676149/160317602-68eacb2e-1afe-499c-9196-d57eadebf04a.mp4
+
+
+These 2 videos were test by me, no one else.
