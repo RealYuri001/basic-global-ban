@@ -33,10 +33,9 @@ __version__ = '1.1.0'
 
 class Confirm(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=120)
+        super().__init__(timeout=30)
 
         self.value = None
-        self.disabled = False
     
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -84,6 +83,10 @@ class SimpleGlobalBan(commands.Cog):
         if not user:
             self.global_ban.reset_cooldown(ctx)
             raise commands.errors.BadArgument
+        
+        if user == ctx.author:
+            self.global_ban.reset_cooldown(ctx)
+            return await ctx.send("You aren't allowed to ban yourself.")
         
         view = Confirm()
         await ctx.send("Do you wanna execute a global ban to {}?".format(str(user)), view=view)
@@ -221,10 +224,9 @@ class SimpleGlobalBan(commands.Cog):
     async def global_unban(self, ctx, user: commands.UserConverter, reason: str=None):
 
         if not user:
+            self.global_unban.reset_cooldown(ctx)
             raise commands.BadArgument
-        
-        self.global_unban.reset_cooldown(ctx)
-        
+                
         view = Confirm()
         
         await ctx.send("Are you sure you wanna do that? (This will automatically unban in every servers bot are in.)", view=view)
@@ -249,7 +251,7 @@ class SimpleGlobalBan(commands.Cog):
                     pass
         
                 except discord.errors.Forbidden:
-                    await ctx.send("I don't have a permission to do that.")
+                    await ctx.send("I don't a permission to do that")
                     pass
 
                 async with aiosqlite.connect("db/main.db") as db:
@@ -292,11 +294,41 @@ class SimpleGlobalBan(commands.Cog):
                 return
         
         else:
-          return
+            return
+    
+    @commands.Cog.listener()
+    async def on_member_unban(self, guild, user):
+        
+        async with aiosqlite.connect("db/main.db") as db:
+            async with db.cursor() as cursor:
+                await cursor.execute('SELECT * FROM banned_users')
+
+                data = await cursor.fetchall()
+                unbanned_user = {}
+
+                for y in data:
+                    unbanned_user[y[0]] = y[1]
+        
+        async for entry in guild.audit_logs(action=discord.AuditLogAction.unban):
+            if user.id == entry.target.id and user.id in unbanned_user:
+                try:
+                    reason = "Automatic unbanned ban-sync system executed."
+                    await guild.ban(user, reason=reason)
+                    await entry.user.send(f"Please do not ban {user},  they was global banned for this reason: {unbanned_user[user.id]}\nPlease consider joining a support server, so we could notify you if the member is unbanned!")
+                    break
+                
+                except discord.errors.NotFound:
+                    return
+                
+                except discord.errors.Forbidden:
+                    return
+                
+                except discord.errors.HTTPException:
+                    return
                 
 class View(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=60)
 
         self.value = None
     
@@ -306,7 +338,7 @@ class View(discord.ui.View):
 
         self.value = True
 
-        await interaction.followup.send("Done.")
+        self.stop()
   
     @discord.ui.button(emoji="❌")
     async def close(self, button: discord.ui.Button, interaction: discord.Interaction):
