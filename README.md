@@ -28,10 +28,12 @@ Features
 
 This is an example from my friend who tested it.
 
-
-
 Ban the user when they joined:
 
-https://cdn.discordapp.com/attachments/829221672150237194/956817637046910976/Discord_3_-_-_Microsoft_Edge_2565-03-25_14-27-17_Trim.mp4
-
 ![image](https://user-images.githubusercontent.com/77676149/160131024-242dda33-eefe-43d9-8887-466d08fa24b8.png)
+
+![image](https://user-images.githubusercontent.com/77676149/160317212-b52e8458-1293-4ac4-99f4-f1611fa21dcd.png)
+
+https://user-images.githubusercontent.com/77676149/160317462-8ae723d8-0351-43e6-8fd2-37199e542a6d.mp4
+
+https://user-images.githubusercontent.com/77676149/160317602-68eacb2e-1afe-499c-9196-d57eadebf04a.mp4
