@@ -312,7 +312,7 @@ class SimpleGlobalBan(commands.Cog):
                 try:
                     reason = "Automatic unbanned ban-sync system executed."
                     await guild.ban(user, reason=reason)
-                    await entry.user.send(f"Please do not ban {user},  they was global banned for this reason: {unbanned_user[user.id]}\nPlease consider joining a support server, so we could notify you if the member is unbanned!")
+                    await entry.user.send(f"Please do not ban {user}, they were global banned for this reason: {unbanned_user[user.id]}\nPlease consider joining a support server, so we could notify you if the member is unbanned!")
                     break
                 
                 except discord.errors.NotFound:
