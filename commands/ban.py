@@ -148,7 +148,7 @@ class SimpleGlobalBan(commands.Cog):
                 for member in guild.members:
                     await member.ban(reason="Automatic ban-sync executed.")
         
-            except discord.Forbidden:
+            except discord.errors.Forbidden:
           
                 for channel in guild.channels:
                     await channel.send("I can't ban these malicious users. Please move me higher than anyone else.")
@@ -160,62 +160,71 @@ class SimpleGlobalBan(commands.Cog):
                     member = await self.bot.fetch_user(ban_userid[0])
                     await guild.ban(member, reason="Authorized auto ban sync.")
                 
-                except discord.Forbidden:
+                except discord.errors.Forbidden:
                     pass
 
-                except discord.NotFound:
+                except discord.errors.NotFound:
                     pass
-
+    
     @commands.command()
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def executedlist(self, ctx):
         
-        async with aiosqlite.connect("db/main.db") as db:
+        async with aiosqlite.connect("globalban.db") as db:
             async with db.cursor() as cursor:
                 await cursor.execute('SELECT * FROM banned_users')
 
                 data = await cursor.fetchall()
                 await ctx.trigger_typing()
-                embed = discord.Embed(title="Global banned ID", timestamp=discord.utils.utcnow(), color=0xe74c3c)
-        
-                msg = ""
-                for ban_userid in data:
-                    mention_user = f"<@!{ban_userid[0]}>"
-                    msg += f"{mention_user} - `{ban_userid[0]}`. Reason: {ban_userid[1]}\n"
+                page = [
+                    discord.Embed(
+                        title="Global Banned ID",
+                        description="List of all the banned user IDs.",
+                        timestamp=discord.utils.utcnow(), 
+                        color=0xe74c3c
+                    )
+                ]
 
-                embed.add_field(name="ID list & Reason", value=f"{msg}" if data else "**None**")
-        
-                embed.set_footer(text="All of malicious users are here!")
-                view = View()
-                f = await ctx.send(embed=embed, view=view)
+                page_count = 0
+                user_add_count = 0
 
-                await view.wait()
-                if view.value is None:
-                    return
-        
-                elif view.value:
-                        try:
-                            for user in data:
-                                await ctx.trigger_typing()
-                                user = await self.bot.fetch_user(user[0])
+                for user in data:
+                    user_add_count += 1
+                    
+                    if user_add_count == 10:
+                        page.append(discord.Embed(
+                        title="Global Banned ID",
+                        description="List of all the banned user IDs.",
+                        timestamp=discord.utils.utcnow(), 
+                        color=0xe74c3c
+                    ))
+                        page_count += 1
+                        user_add_count = 0
+                    
+                    s = await self.bot.get_or_fetch_user(user[0])
 
-                                await ctx.guild.ban(user, reason=f"Mass malicious users list banned. Authorized by {str(ctx.author)}")
-                                await asyncio.sleep(0.25)
+                    page[page_count].add_field(name=f"{str(s)} - {s.id}", value=f"Reason: {user[1]}", inline=False)
+                    page[page_count].set_footer(text="Malicious user lists are here.")
+                
+                button = [
+                    pages.PaginatorButton("first", emoji="<:double_left:951554331231023145>", style=discord.ButtonStyle.blurple),
+                    pages.PaginatorButton("prev", emoji="<:left:951554511917449287>", style=discord.ButtonStyle.blurple),
+                    pages.PaginatorButton("page_indicator", style=discord.ButtonStyle.blurple, disabled=True),
+                    pages.PaginatorButton("next", emoji="<:right:952825932660506625>", style=discord.ButtonStyle.blurple),
+                    pages.PaginatorButton("last", emoji="<:double_right:951554393579356231>", style=discord.ButtonStyle.blurple)
+                ]
 
-                        except discord.NotFound:
-                            await ctx.send("This user is not found.")
-                            pass
-        
-                        except discord.Forbidden:
-                            await ctx.send("I don't have a permission to do that.")
-                            pass
-              
-                        except Exception as e:
-                            print(e)
-
-                else:
-                    await f.delete()
+                pagination = pages.Paginator(
+                    pages=page, 
+                    author_check=True, 
+                    timeout=30, 
+                    custom_buttons=button, 
+                    disable_on_timeout=True,
+                    use_default_buttons=False
+                )
+                
+                await pagination.send(ctx)
     
     @commands.command(aliases=["gunban"])
     @commands.bot_has_permissions(ban_members=True)
@@ -251,7 +260,6 @@ class SimpleGlobalBan(commands.Cog):
                     pass
         
                 except discord.errors.Forbidden:
-                    await ctx.send("I don't a permission to do that")
                     pass
 
                 async with aiosqlite.connect("db/main.db") as db:
