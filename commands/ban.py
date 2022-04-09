@@ -206,22 +206,12 @@ class SimpleGlobalBan(commands.Cog):
 
                     page[page_count].add_field(name=f"{str(s)} - {s.id}", value=f"Reason: {user[1]}", inline=False)
                     page[page_count].set_footer(text="Malicious user lists are here.")
-                
-                button = [
-                    pages.PaginatorButton("first", emoji="<:double_left:951554331231023145>", style=discord.ButtonStyle.blurple),
-                    pages.PaginatorButton("prev", emoji="<:left:951554511917449287>", style=discord.ButtonStyle.blurple),
-                    pages.PaginatorButton("page_indicator", style=discord.ButtonStyle.blurple, disabled=True),
-                    pages.PaginatorButton("next", emoji="<:right:952825932660506625>", style=discord.ButtonStyle.blurple),
-                    pages.PaginatorButton("last", emoji="<:double_right:951554393579356231>", style=discord.ButtonStyle.blurple)
-                ]
 
                 pagination = pages.Paginator(
                     pages=page, 
                     author_check=True, 
-                    timeout=30, 
-                    custom_buttons=button, 
+                    timeout=30,
                     disable_on_timeout=True,
-                    use_default_buttons=False
                 )
                 
                 await pagination.send(ctx)
