@@ -238,12 +238,13 @@ class SimpleGlobalBan(commands.Cog):
         elif view.value:
             for server in self.bot.guilds:
                 try:
-                    if user in await server.bans():
-                        await server.unban(user, reason=f"Automatic unbanned authorized by {ctx.author}. Reason: {reason}")
+                    async for ban in server.bans(limit=None):
+                        if ban.user == user:
+                            await server.unban(user, reason=f"Automatic unbanned authorized by {ctx.author}. Reason: {reason}")
                     
-                    else:
-                        user = await self.bot.fetch_user(user.id)
-                        await server.unban(user, reason=f"Automatic unbanned authorized by {ctx.author}. Reason: {reason}")
+                        else:
+                            user = await self.bot.fetch_user(user.id)
+                            await server.unban(user, reason=f"Automatic unbanned authorized by {ctx.author}. Reason: {reason}")
         
                 except discord.errors.NotFound:
                     await ctx.send("This user is not found.")
