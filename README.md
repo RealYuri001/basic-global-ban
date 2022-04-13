@@ -1,7 +1,9 @@
 basic-global-ban
 ----------------
 
-**Warning! This code will be no longer updated after all of bugs has been fixed.**
+**Warning! This code is no longer updated to newer version, due to Py-Cord v2.0.0b7 breaking change about bans. See this PR for more info.**
+
+https://github.com/Pycord-Development/pycord/pull/1217
 
 A basic discord global ban made it python and [Py-cord](https://github.com/Pycord-Development/pycord) library. It is useful for banning malicious users.
 
