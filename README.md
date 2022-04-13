@@ -1,7 +1,7 @@
 basic-global-ban
 ----------------
 
-**Warning! This code is no longer updated to newer version, due to Py-Cord v2.0.0b7 breaking change about bans. See this PR for more info.**
+**Warning! This code is required a newest version of py-cord, due to breaking change about bans. See this PR for more info.**
 
 https://github.com/Pycord-Development/pycord/pull/1217
 
