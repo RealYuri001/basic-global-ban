@@ -80,7 +80,7 @@ class SimpleGlobalBan(commands.Cog):
     @commands.cooldown(1, 300, commands.BucketType.guild)
     async def global_ban(self, ctx, user: Union[commands.UserConverter, commands.MemberConverter], *, reason: str =None):
 
-        if not user:
+        if user is None:
             self.global_ban.reset_cooldown(ctx)
             raise commands.errors.BadArgument
         
