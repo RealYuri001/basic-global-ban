@@ -19,7 +19,7 @@ async def on_ready():
 
 for file in os.listdir('./commands'):
     if file.endswith('.py'):
-        bot.load_extension("commands."+ file[:-3])
+        bot.load_extension(f"commands.{file[:-3]}")
 
 if __name__ == '__main__':
     keep_alive()
